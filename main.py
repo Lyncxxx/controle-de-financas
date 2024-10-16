@@ -1,9 +1,8 @@
 import sys
 from random import randint
+from datetime import datetime
 
 
-
-tipos_de_transacao = ['Receita', 'Despeza']
 
 def valida_int(msg):
     while True:
@@ -13,6 +12,27 @@ def valida_int(msg):
             print('Informe um número inteiro válido!')
         else:
             return n
+
+def valida_tipo(msg):
+    tipos_de_transacao = ['Receita', 'Despesa']
+    while True:
+        t = input(msg).strip().capitalize()
+        if t in tipos_de_transacao:
+            return t
+        else:
+            print('Informe um tipo válido!')
+
+def valida_data(msg):
+    while True:
+        try:
+            data = input(msg)
+            datetime.strptime(data, '%d/%m/%Y')
+        except:
+            print('ERRO! Formato de data inválido!')
+        else:
+            return data
+
+
 
 def gera_id():
     while True:
@@ -33,7 +53,7 @@ class Transacao:
 
     def modificar_valor(self):
         while True:
-            novo_valor = input('Insira o novo valor: ')
+            novo_valor = valida_int('Insira o novo valor: ')
             if novo_valor == self.valor:
                 print('ERRO! Novo valor igual ao atual.')
             else:
@@ -44,7 +64,7 @@ class Transacao:
 
     def modificar_data(self):
         while True:
-            nova_data = input('Insira a nova data: ')
+            nova_data = valida_data('Insira a nova data: ')
             if nova_data == self.data:
                 print('ERRO! Nova data igual a atual.')
             else:
@@ -64,7 +84,7 @@ class Transacao:
 
     def modificar_tipo(self):
         while True:
-            novo_tipo = input('Insira o novo tipo: ')
+            novo_tipo = valida_tipo('Insira o novo tipo: ')
             if novo_tipo == self.tipo:
                 print('ERRO! Novo tipo igual a atual.')
             else:
@@ -81,14 +101,21 @@ class Conta:
 
     def calcular_saldo(self):
         for transacao in self.transacoes:
-            if transacao.tipo in ['Receita', 'Despeza']:
-                if transacao.tipo == 'Despeza':
+            if transacao.tipo in ['Receita', 'Despesa']:
+                if transacao.tipo == 'Despesa':
                     self.saldo -= transacao.valor
                 else:
                     self.saldo += transacao.valor
 
     def vizualizar_saldo(self):
-        print(self.saldo)
+        saldo_provisorio = 0
+        for transacao in self.transacoes:
+            if transacao.tipo == 'Receita':
+                saldo_provisorio += transacao.valor
+            else:
+                saldo_provisorio -= transacao.valor
+        self.saldo = saldo_provisorio
+        print(f'SALDO: {self.saldo}')
 
     def listar_transacoes(self):
         if len(self.transacoes) == 0:
@@ -99,106 +126,130 @@ class Conta:
 
     def filtrar_categoria(self):
         lista_de_receitas = []
-        lista_de_despezas = []
-        categoria_filtrada = input('informe a categora a ser filtrada: ').strip().title()
-        if categoria_filtrada in self.lista_de_categorias:
-            for transacao in self.transacoes:
-                if transacao.categoria == categoria_filtrada:
-                    if transacao.tipo == 'Despeza':
-                        lista_de_despezas.append(transacao)
-                    else:
-                        lista_de_receitas.append(transacao)
-            for transaco in lista_de_receitas:
-                print(transaco)
-            for transacao in lista_de_despezas:
-                print(transacao)
-        else:
-            print('ERRO! Categoria não encontrada.')
+        lista_de_despesas = []
+        categoria_filtrada = ''
+        while categoria_filtrada not in self.lista_de_categorias:
+            categoria_filtrada = input('informe a categora a ser filtrada: ').strip().title()
+            if categoria_filtrada in self.lista_de_categorias:
+                for transacao in self.transacoes:
+                    if transacao.categoria == categoria_filtrada:
+                        if transacao.tipo == 'Despesa':
+                            lista_de_despesas.append(transacao)
+                        else:
+                            lista_de_receitas.append(transacao)
+                for transaco in lista_de_receitas:
+                    print(transaco)
+                for transacao in lista_de_despesas:
+                    print(transacao)
+            else:
+                print('ERRO! Categoria não encontrada.')
 
     def filtrar_tipo(self):
-        tipo_buscado = input('Deseja exibir todas as Receitas ou Despezas? ').strip().capitalize()
+        tipo_buscado = ''
+        while tipo_buscado not in ['R', 'D']:
+            tipo_buscado = input('Deseja exibir todas as (R)eceitas ou (D)espezas? ').strip().upper()[0]
+        if tipo_buscado == 'R':
+            tipo_buscado = 'Receita'
+        elif tipo_buscado == 'D':
+            tipo_buscado = 'Despesa'
+        else:
+            print('ERRO! Informe um tipo válido.')
         for transacao in self.transacoes:
             if transacao.tipo == tipo_buscado:
                 print(transacao)
 
     def adicionar_transacao(self):
-        valor = int(input('Valor: '))
-        data = input('Data: ')
-        categoria = input('Categoria: ')
-        tipo = input('Tipo: ')
+        valor = valida_int('Valor: ')
+        data = valida_data('Data: ')
+        categoria = input('Categoria: ').strip().capitalize()
+        tipo = valida_tipo('Tipo: ')
         transacao = Transacao(valor, data, categoria, tipo)
         self.transacoes.append(transacao)
         self.lista_de_id.append(transacao.id_da_transacao)
         self.lista_de_categorias.append(transacao.categoria)
+        print('Transação adicioanada com sucesso!')
 
-    def remover_transacao(self, transacao):
-        self.saldo -= transacao.valor
-        self.transacoes.remove(transacao)
-        print('Transação removida com sucesso!')
+    def remover_transacao(self):
+        id_transacao = 0
+        while id_transacao not in self.lista_de_id:
+            id_transacao = valida_int('Informe o ID da trasção que deseja remove: ')
+            if id_transacao in self.lista_de_id:
+                for transacao in self.transacoes:
+                    if transacao.id_da_transacao == id_transacao:
+                        self.saldo -= transacao.valor
+                        self.transacoes.remove(transacao)
+                        print('Transação removida com sucesso!')
+            else:
+                print('ERRO! Informe um ID válido.')
 
 def main():
     while True:
         opcao = valida_int('''MENU
 [1] LISTAR TRANSAÇÕES
 [2] NOVA TRANSAÇÃO
-[3] EDITAR OU REMOVER TRANSAÇÃO
-[4] FILTRAR
-[5] VER SALDO
-[6] SAIR
+[3] EDITAR TRANSAÇÃO
+[4] REMOVER TRANSAÇÃO
+[5] FILTRAR
+[6] VER SALDO
+[7] SAIR
 > ''')
 
         if opcao == 1:
             conta.listar_transacoes()
+
         elif opcao == 2:
             conta.adicionar_transacao()
+
         elif opcao == 3:
             while True:
-                opcao3_resp = input('Deseja (e)ditar ou (r)emover transação?').strip().lower()[0]
-                if opcao3_resp in 'er':
-                    break
-                else:
-                    print('Infomer uma opção válida!')
-            while True:
                 id_buscado = valida_int('Informe o ID da transação que deseja modificar: ')
-                if id_buscado in conta.lista_de_id:
-                    break
+                if id_buscado not in conta.lista_de_id:
+                    print('ERRO! ID não encontrado.')
                 else:
-                    print('Infomer uma opção válida!')
+                    break
 
-            if id_buscado in conta.lista_de_id:
-                for transacao in conta.transacoes:
-                    if transacao.id_da_transacao == id_buscado:
-                        if opcao3_resp == 'e':
-                            opcao_editar = valida_int('''O QUE DESEJA MODIFICAR?
+            for transacao in conta.transacoes:
+                if transacao.id_da_transacao == id_buscado:
+                    opcao_editar = 0
+                    while opcao_editar not in range(1, 5):
+                        opcao_editar = valida_int('''O QUE DESEJA MODIFICAR?
 [1] VALOR
 [2] DATA
 [3] CATEGORIA
 [4] TIPO
 > ''')
-                            if opcao_editar == 1:
-                                transacao.modificar_valor()
-                            elif opcao_editar == 2:
-                                transacao.modificar_data()
-                            elif opcao_editar == 3:
-                                transacao.modificar_categoria()
-                            elif opcao_editar == 4:
-                                transacao.modificar_tipo()
-                            else:
-                                print('ERRO! Informe uma opção válida.')
-
-                        elif opcao3_resp == 'r':
-                            conta.remover_transacao(transacao)
-            else:
-                print('ERRO! ID não encontrado.')
+                        if opcao_editar == 1:
+                            transacao.modificar_valor()
+                        elif opcao_editar == 2:
+                            transacao.modificar_data()
+                        elif opcao_editar == 3:
+                            transacao.modificar_categoria()
+                        elif opcao_editar == 4:
+                            transacao.modificar_tipo()
+                        else:
+                            print('ERRO! Infor uma opção entre 1 e 4.')
 
         elif opcao == 4:
-            metodo_de_filtro = input('Deseja filtrar por Categoria ou Tipo? ').strip().lower()
-            if metodo_de_filtro == 'categoria':
-                conta.filtrar_categoria()
-            elif metodo_de_filtro == 'tipo':
-                conta.filtrar_tipo()
+            conta.remover_transacao()
+
+        elif opcao == 5:
+            modo_de_filtragem = 0
+            while modo_de_filtragem not in range(1, 3):
+                modo_de_filtragem = valida_int('''QUAL SERÁ O MODO DE FILTRAGEM?
+[1] POR TIPO
+[2] POR CATEGORIA
+> ''')
+                if modo_de_filtragem == 1:
+                    conta.filtrar_tipo()
+                elif modo_de_filtragem == 2:
+                    conta.filtrar_categoria()
+                else:
+                    print('ERRO! Informe uma opção válida.')
 
         elif opcao == 6:
+            conta.vizualizar_saldo()
+
+        elif opcao == 7:
             print('Até logo!')
             sys.exit()
 
@@ -208,7 +259,10 @@ def main():
 if __name__ == '__main__':
     conta = Conta()
     transacao1 = Transacao(1500, '15/10', 'Salário', 'Receita')
-    transacao2 = Transacao(300, '16/10', 'Alimentação', 'Despeza')
-    transacao3 = Transacao(500, '20/10', 'Alimentação', 'Despeza')
-    conta.transacoes.extend([transacao1, transacao2, transacao3])
+    transacao2 = Transacao(300, '16/10', 'Alimentação', 'Despesa')
+    transacao3 = Transacao(500, '20/10', 'Aluguel', 'Despesa')
+    transacao4 = Transacao(100, '20/10', 'Alimentação', 'Despesa')
+    conta.transacoes.extend([transacao1, transacao2, transacao3, transacao4])
+    conta.lista_de_categorias.extend([transacao.categoria for transacao in conta.transacoes])
+    conta.lista_de_id.extend([transacao.id_da_transacao for transacao in conta.transacoes])
     main()
