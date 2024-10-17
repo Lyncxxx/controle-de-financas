@@ -1,6 +1,7 @@
 import sys
 from random import randint
 from datetime import datetime
+from moeda import formatar_valor
 
 
 
@@ -32,13 +33,23 @@ def valida_data(msg):
         else:
             return data
 
-
-
 def gera_id():
     while True:
         id_gerado = randint(1000, 5000)
         if id_gerado not in conta.lista_de_id:
             return id_gerado
+
+def cabecalho():
+    cabecalho_str = f'{'VALOR'} {'DATA':>21} {'CATEGORIA':>33} {'TIPO':>23} {'ID':>11}'
+    print('-'* (len(cabecalho_str)+2))
+    print(cabecalho_str)
+    print('-' * (len(cabecalho_str)+2))
+
+def titulo(msg):
+    tamanho_da_linha = 100
+    print('-' * tamanho_da_linha)
+    print(msg.center(tamanho_da_linha-5))
+    print('-' * tamanho_da_linha)
 
 class Transacao:
     def __init__(self, valor, data, categoria, tipo):
@@ -49,7 +60,8 @@ class Transacao:
         self.id_da_transacao = gera_id()
 
     def __str__(self):
-        return f'R${self.valor}, {self.data}, {self.categoria}, {self.tipo}, {self.id_da_transacao}'
+        valor_formatado = formatar_valor(self.valor)
+        return f'R${valor_formatado:<20} {self.data:<28} {self.categoria:<28} {self.tipo} {self.id_da_transacao:>10}'
 
     def modificar_valor(self):
         while True:
@@ -115,9 +127,11 @@ class Conta:
             else:
                 saldo_provisorio -= transacao.valor
         self.saldo = saldo_provisorio
-        print(f'SALDO: {self.saldo}')
+        valor_formatado = formatar_valor(self.saldo)
+        print(f'SALDO: R${valor_formatado}')
 
     def listar_transacoes(self):
+        cabecalho()
         if len(self.transacoes) == 0:
             print('Nenhuma transação registrada!')
         else:
@@ -131,6 +145,7 @@ class Conta:
         while categoria_filtrada not in self.lista_de_categorias:
             categoria_filtrada = input('informe a categora a ser filtrada: ').strip().title()
             if categoria_filtrada in self.lista_de_categorias:
+                cabecalho()
                 for transacao in self.transacoes:
                     if transacao.categoria == categoria_filtrada:
                         if transacao.tipo == 'Despesa':
@@ -154,6 +169,7 @@ class Conta:
             tipo_buscado = 'Despesa'
         else:
             print('ERRO! Informe um tipo válido.')
+        cabecalho()
         for transacao in self.transacoes:
             if transacao.tipo == tipo_buscado:
                 print(transacao)
@@ -184,8 +200,8 @@ class Conta:
 
 def main():
     while True:
-        opcao = valida_int('''MENU
-[1] LISTAR TRANSAÇÕES
+        titulo('MENU')
+        opcao = valida_int('''[1] LISTAR TRANSAÇÕES
 [2] NOVA TRANSAÇÃO
 [3] EDITAR TRANSAÇÃO
 [4] REMOVER TRANSAÇÃO
@@ -258,11 +274,4 @@ def main():
 
 if __name__ == '__main__':
     conta = Conta()
-    transacao1 = Transacao(1500, '15/10', 'Salário', 'Receita')
-    transacao2 = Transacao(300, '16/10', 'Alimentação', 'Despesa')
-    transacao3 = Transacao(500, '20/10', 'Aluguel', 'Despesa')
-    transacao4 = Transacao(100, '20/10', 'Alimentação', 'Despesa')
-    conta.transacoes.extend([transacao1, transacao2, transacao3, transacao4])
-    conta.lista_de_categorias.extend([transacao.categoria for transacao in conta.transacoes])
-    conta.lista_de_id.extend([transacao.id_da_transacao for transacao in conta.transacoes])
     main()
